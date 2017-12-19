@@ -3,19 +3,16 @@
  */
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withStyles } from 'material-ui/styles';
 import classNames from 'classnames';
 import Drawer from 'material-ui/Drawer';
-import Toolbar from 'material-ui/Toolbar';
-import List from 'material-ui/List';
 import { MenuItem } from 'material-ui/Menu';
-import Typography from 'material-ui/Typography';
 import TextField from 'material-ui/TextField';
 import Divider from 'material-ui/Divider';
 import IconButton from 'material-ui/IconButton';
-import MenuIcon from 'material-ui-icons/Menu';
 import ChevronLeftIcon from 'material-ui-icons/ChevronLeft';
 import ChevronRightIcon from 'material-ui-icons/ChevronRight';
+import { FormGroup, FormControlLabel } from 'material-ui/Form';
+import Checkbox from 'material-ui/Checkbox';
 import * as ace from 'brace';
 /*eslint-disable no-alert, no-console */
 import 'brace/ext/language_tools';
@@ -37,7 +34,8 @@ export class Sidebar extends React.Component {
         const {
             classes, theme, anchor, open, mode, fontSize,
             handleDrawerClose, handleChangeAnchor,
-            handleChange
+            handleChange, showLineNumbers, showGutters,
+            tabSize
         } = this.props;
 
         return (
@@ -89,6 +87,36 @@ export class Sidebar extends React.Component {
                             }}
                             margin="normal"
                         />
+                        <TextField
+                            id="tab-size"
+                            label="Tab Size"
+                            value={tabSize}
+                            onChange={handleChange("tabSize")}
+                            type="number"
+                            fullWidth
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                            margin="normal"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={showLineNumbers}
+                                    onChange={(e) => handleChange('showLineNumbers')({target: {value: e.target.checked}})}
+                                />
+                            }
+                            label="Show Line Numbers"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={showGutters}
+                                    onChange={(e) => handleChange('showGutters')({target: {value: e.target.checked}})}
+                                />
+                            }
+                            label="Show Gutters"
+                        />
                     </div>
                     <Divider />
                     <div className={classes.drawerBottomControls}>
@@ -137,6 +165,7 @@ export class AppbarMenu extends React.Component {
                     InputProps={{
                         className: classes.input
                     }}
+                    className={classes.textField}
                 >
                     { LANGUAGES.map(i => <MenuItem key={i} value={i}>{i}</MenuItem>) }
                 </TextField>
@@ -153,6 +182,7 @@ export class AppbarMenu extends React.Component {
                     InputProps={{
                         className: classNames(classes.input, classes.underline)
                     }}
+                    className={classes.textField}
                 />
             </div>
         );
@@ -181,7 +211,7 @@ export class Editor extends React.Component {
     };
 
     render() {
-        const { classes, theme = "github", mode = "java", fontSize = 12 } = this.props;
+        const { classes, theme = "github", mode = "java", fontSize = 12, showLineNumbers, showGutters, tabSize = 4 } = this.props;
         const { content } = this.state;
         return (
             <AceEditor
@@ -193,6 +223,11 @@ export class Editor extends React.Component {
                 value={content}
                 className={classes.editor}
                 fontSize={fontSize}
+                setOptions={{
+                    showLineNumbers: showLineNumbers
+                }}
+                showGutter={showGutters}
+                tabSize={tabSize}
             />
         );
     }

@@ -172,6 +172,9 @@ const styles = theme => ({
     },
     icon: {
         fill: 'white !important'
+    },
+    textField: {
+        margin: '0 5px'
     }
 });
 
@@ -181,7 +184,10 @@ class App extends React.Component {
         anchor: 'left',
         mode: LANGUAGES[0],
         theme: THEMES[0],
-        fontSize: 12
+        fontSize: 12,
+        showLineNumbers: true,
+        showGutters: true,
+        tabSize: 4
     };
 
     handleDrawerOpen = () => {
