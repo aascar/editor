@@ -11,9 +11,8 @@ import TextField from 'material-ui/TextField';
 import Divider from 'material-ui/Divider';
 import IconButton from 'material-ui/IconButton';
 import MenuIcon from 'material-ui-icons/Menu';
-import ChevronLeftIcon from 'material-ui-icons/ChevronLeft';
-import ChevronRightIcon from 'material-ui-icons/ChevronRight';
-import {Editor, Sidebar} from "./components";
+import {AppbarMenu, Editor, Sidebar} from "./components";
+import {ANCHOR_ENUM, LANGUAGES, THEMES} from "./constants";
 
 const drawerWidth = 240;
 
@@ -76,6 +75,9 @@ const styles = theme => ({
         marginLeft: 12,
         marginRight: 20,
     },
+    flex: {
+        flex: 1,
+    },
     hide: {
         display: 'none',
     },
@@ -120,6 +122,11 @@ const styles = theme => ({
             },
         }
     },
+    appBarMenu: {
+        [theme.breakpoints.down('sm')]: {
+            display: 'none'
+        }
+    },
     'content-left': {
         marginLeft: -drawerWidth,
     },
@@ -148,18 +155,33 @@ const styles = theme => ({
                 minHeight: 'calc(100vh - 64px)'
             },
         }
+    },
+    selectMenu: {
+        color: 'white'
+    },
+    input: {
+        color: 'white'
+    },
+    underline: {
+        '&:before': {
+            backgroundColor: 'rgba(255, 255, 255, 0.72) !important'
+        }
+    },
+    formControl: {
+        color: 'white'
+    },
+    icon: {
+        fill: 'white !important'
     }
 });
-
-const ANCHOR_ENUM = {
-    LEFT: "left",
-    RIGHT: "right"
-};
 
 class App extends React.Component {
     state = {
         open: false,
         anchor: 'left',
+        mode: LANGUAGES[0],
+        theme: THEMES[0],
+        fontSize: 12
     };
 
     handleDrawerOpen = () => {
@@ -176,6 +198,13 @@ class App extends React.Component {
         });
     };
 
+    handleChange = property => event => {
+        const { value } = event.target;
+        this.setState({
+            [property]: isNaN(value) ? value : Number(value),
+        });
+    };
+
     render() {
         const { classes, theme } = this.props;
         const { anchor, open } = this.state;
@@ -185,6 +214,7 @@ class App extends React.Component {
             {...this.state}
             handleDrawerClose={this.handleDrawerClose}
             handleChangeAnchor={this.handleChangeAnchor}
+            handleChange={this.handleChange}
         />;
 
         return (
@@ -195,6 +225,7 @@ class App extends React.Component {
                             [classes.appBarShift]: open,
                             [classes[`appBarShift-${anchor}`]]: open,
                         })}
+                        position="static"
                     >
                         <Toolbar disableGutters={!open}>
                             <IconButton
@@ -205,9 +236,12 @@ class App extends React.Component {
                             >
                                 <MenuIcon />
                             </IconButton>
-                            <Typography type="title" color="inherit" noWrap>
+                            <Typography type="title" color="inherit" noWrap className={classes.flex}>
                                 Aascar Editor
                             </Typography>
+                            <div className={classes.appBarMenu}>
+                                <AppbarMenu {...this.props} {...this.state} handleChange={this.handleChange}/>
+                            </div>
                         </Toolbar>
                     </AppBar>
                     {
@@ -219,7 +253,7 @@ class App extends React.Component {
                             [classes[`contentShift-${anchor}`]]: open,
                         })}
                     >
-                        <Editor {...this.props} theme={undefined}/>
+                        <Editor {...this.props} {...this.state}/>
                     </main>
                     {
                         ANCHOR_ENUM.RIGHT === anchor && drawer()

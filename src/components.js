@@ -16,13 +16,29 @@ import IconButton from 'material-ui/IconButton';
 import MenuIcon from 'material-ui-icons/Menu';
 import ChevronLeftIcon from 'material-ui-icons/ChevronLeft';
 import ChevronRightIcon from 'material-ui-icons/ChevronRight';
-import brace from 'brace';
+import * as ace from 'brace';
+/*eslint-disable no-alert, no-console */
+import 'brace/ext/language_tools';
+import 'brace/ext/searchbox';
+
 import AceEditor from 'react-ace';
+import { LANGUAGES, THEMES } from "./constants";
+
+LANGUAGES.forEach(mode => {
+    require(`brace/mode/${mode}`);
+});
+THEMES.forEach(theme => {
+    require(`brace/theme/${theme}`);
+});
 
 export class Sidebar extends React.Component {
 
     render() {
-        const { classes, theme, anchor, open, handleDrawerClose, handleChangeAnchor } = this.props;
+        const {
+            classes, theme, anchor, open, mode, fontSize,
+            handleDrawerClose, handleChangeAnchor,
+            handleChange
+        } = this.props;
 
         return (
             <Drawer
@@ -41,7 +57,38 @@ export class Sidebar extends React.Component {
                     </div>
                     <Divider />
                     <div className={classes.drawerControls}>
-
+                        <TextField
+                            select
+                            label="Editor Theme"
+                            value={theme}
+                            onChange={handleChange("theme")}
+                            margin="normal"
+                            fullWidth
+                        >
+                            { THEMES.map(i => <MenuItem key={i} value={i}>{i}</MenuItem>) }
+                        </TextField>
+                        <TextField
+                            select
+                            label="Language"
+                            value={mode}
+                            onChange={handleChange("mode")}
+                            margin="normal"
+                            fullWidth
+                        >
+                            { LANGUAGES.map(i => <MenuItem key={i} value={i}>{i}</MenuItem>) }
+                        </TextField>
+                        <TextField
+                            id="font-size"
+                            label="Font Size"
+                            value={fontSize}
+                            onChange={handleChange("fontSize")}
+                            type="number"
+                            fullWidth
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                            margin="normal"
+                        />
                     </div>
                     <Divider />
                     <div className={classes.drawerBottomControls}>
@@ -50,7 +97,7 @@ export class Sidebar extends React.Component {
                             select
                             label="Sidebar Position"
                             value={anchor}
-                            onChange={handleChangeAnchor}
+                            onChange={handleChange("anchor")}
                             margin="normal"
                             fullWidth
                         >
@@ -60,6 +107,54 @@ export class Sidebar extends React.Component {
                     </div>
                 </div>
             </Drawer>
+        );
+    }
+}
+
+export class AppbarMenu extends React.Component {
+
+    render() {
+        const {
+            classes, theme, anchor, open, mode, fontSize,
+            handleDrawerClose, handleChangeAnchor,
+            handleChange
+        } = this.props;
+
+        return (
+            <div>
+                <TextField
+                    select
+                    label="Language"
+                    value={mode}
+                    onChange={handleChange("mode")}
+                    InputLabelProps={{
+                        shrink: true,
+                        className: classes.formControl
+                    }}
+                    SelectProps={{
+                        className: classNames(classes.icon, classes.selectMenu, classes.underline)
+                    }}
+                    InputProps={{
+                        className: classes.input
+                    }}
+                >
+                    { LANGUAGES.map(i => <MenuItem key={i} value={i}>{i}</MenuItem>) }
+                </TextField>
+                <TextField
+                    id="font-size"
+                    label="Font Size"
+                    value={fontSize}
+                    onChange={handleChange("fontSize")}
+                    type="number"
+                    InputLabelProps={{
+                        shrink: true,
+                        className: classes.formControl
+                    }}
+                    InputProps={{
+                        className: classNames(classes.input, classes.underline)
+                    }}
+                />
+            </div>
         );
     }
 }
@@ -86,9 +181,8 @@ export class Editor extends React.Component {
     };
 
     render() {
-        const { classes, theme="github", mode="java" } = this.props;
+        const { classes, theme = "github", mode = "java", fontSize = 12 } = this.props;
         const { content } = this.state;
-
         return (
             <AceEditor
                 mode={mode}
@@ -98,6 +192,7 @@ export class Editor extends React.Component {
                 editorProps={{$blockScrolling: true}}
                 value={content}
                 className={classes.editor}
+                fontSize={fontSize}
             />
         );
     }
@@ -105,6 +200,6 @@ export class Editor extends React.Component {
 
 Sidebar.propTypes = {
     classes: PropTypes.object.isRequired,
-    theme: PropTypes.object.isRequired,
-    mode: PropTypes.string
+    theme: PropTypes.string.isRequired,
+    mode: PropTypes.string.isRequired
 };
