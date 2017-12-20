@@ -174,7 +174,8 @@ const styles = theme => ({
         fill: 'white !important'
     },
     textField: {
-        margin: '0 5px'
+        margin: '0 5px',
+        width: 150
     }
 });
 

@@ -20,6 +20,7 @@ import 'brace/ext/searchbox';
 
 import AceEditor from 'react-ace';
 import { LANGUAGES, THEMES } from "./constants";
+import Github from "./Github";
 
 LANGUAGES.forEach(mode => {
     require(`brace/mode/${mode}`);
@@ -184,6 +185,14 @@ export class AppbarMenu extends React.Component {
                     }}
                     className={classes.textField}
                 />
+                <IconButton
+                    component="a"
+                    title="GitHub"
+                    color="contrast"
+                    href="https://github.com/aascar/editor"
+                >
+                    <Github />
+                </IconButton>
             </div>
         );
     }
