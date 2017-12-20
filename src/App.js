@@ -179,17 +179,39 @@ const styles = theme => ({
     }
 });
 
+const STATE_KEY = "_state";
+
 class App extends React.Component {
     state = {
         open: false,
         anchor: 'left',
         mode: LANGUAGES[0],
         theme: THEMES[0],
-        fontSize: 12,
+        fontSize: 14,
         showLineNumbers: true,
         showGutters: true,
         tabSize: 4
     };
+
+    componentWillMount(){
+        this.setState(this.retrieveState());
+    }
+
+    retrieveState = () => {
+        if(window.localStorage.hasOwnProperty(STATE_KEY)) {
+            return JSON.parse(window.localStorage.getItem(STATE_KEY));
+        }else{
+            return this.state;
+        }
+    };
+
+    commitState = (state) => {
+        window.localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    };
+
+    componentWillUpdate(nextProps, nextState) {
+        this.commitState(nextState);
+    }
 
     handleDrawerOpen = () => {
         this.setState({ open: true });

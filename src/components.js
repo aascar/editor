@@ -198,7 +198,7 @@ export class AppbarMenu extends React.Component {
     }
 }
 
-const CONTENT_KEY = "content";
+const CONTENT_KEY = "_content";
 
 export class Editor extends React.Component {
 
@@ -207,16 +207,30 @@ export class Editor extends React.Component {
     };
 
     componentWillMount(){
-        const content = JSON.parse(window.localStorage.getItem(CONTENT_KEY)) || this.state.content;
+        const content = this.retrieveContent();
         this.setState({content});
     }
 
     componentWillUnmount(){
-        window.localStorage.setItem(CONTENT_KEY, JSON.stringify(this.state.content));
+        this.commitContent();
     }
 
+    retrieveContent = () => {
+        if(window.localStorage.hasOwnProperty(CONTENT_KEY)) {
+            return window.localStorage.getItem(CONTENT_KEY);
+        }else{
+            return this.state.content;
+        }
+    };
+
+    commitContent = () => {
+        setTimeout(() => { //FIXME: need proper callback for storing content
+            window.localStorage.setItem(CONTENT_KEY, this.state.content);
+        }, 10);
+    };
+
     handleChange = (content) => {
-        this.setState({content});
+        this.setState({content}, this.commitContent);
     };
 
     render() {
