@@ -9,14 +9,16 @@
     "classnames": "2.2.5",
     "gh-pages": "1.1.0",
     "glob": "7.1.2",
-    "material-ui": "1.0.0-beta.24",
-    "material-ui-icons": "1.0.0-beta.17",
+    "material-ui": "1.0.0-beta.40",
+    "material-ui-icons": "1.0.0-beta.36",
     "path": "0.12.7",
     "prop-types": "15.6.0",
     "react": "^16.2.0",
     "react-ace": "5.8.0",
     "react-dom": "^16.2.0",
-    "react-scripts": "1.0.17"
+    "react-helmet": "5.2.0",
+    "react-scripts": "1.0.17",
+    "react-select": "1.2.1"
   },
   "scripts": {
     "start": "react-scripts start",
