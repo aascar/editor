@@ -1,18 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withStyles } from 'material-ui/styles';
+import { MuiThemeProvider, createMuiTheme, withStyles } from 'material-ui/styles';
 import classNames from 'classnames';
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
-import List from 'material-ui/List';
-import { MenuItem } from 'material-ui/Menu';
 import Typography from 'material-ui/Typography';
-import TextField from 'material-ui/TextField';
-import Divider from 'material-ui/Divider';
 import IconButton from 'material-ui/IconButton';
 import MenuIcon from 'material-ui-icons/Menu';
 import {AppbarMenu, Editor, Sidebar} from "./components";
 import {ANCHOR_ENUM, LANGUAGES, THEMES} from "./constants";
+import { blue } from 'material-ui/colors';
+import Snackbar from 'material-ui/Snackbar';
+import Button from 'material-ui/Button';
+import CloseIcon from 'material-ui-icons/Close';
+import SaveIcon from 'material-ui-icons/Save';
 
 const drawerWidth = 240;
 
@@ -176,41 +177,90 @@ const styles = theme => ({
     textField: {
         margin: '0 5px',
         width: 150
+    },
+    fabIcon: {
+        position: 'fixed',
+        right: 20,
+        bottom: 20,
+        zIndex: 30
     }
 });
 
-const STATE_KEY = "_state";
+const STATE_KEY = "_last_stored_state";
+
+const theme = createMuiTheme({
+    typography: {
+        //htmlFontSize: 10,
+    },
+    palette: {
+        //type: 'dark',
+        background: {
+            default: "#F2F2F4"
+        },
+        primary: {
+            light: blue[500],
+            main: blue[700],
+            dark: blue[900],
+        },
+        secondary: {
+            light: "#F1F1F1",
+            main: "#FEFEFE",
+            dark: "#FFFFFF",
+        }
+    }
+});
+
+const DEFAULT_GIST_NAME = "New Private Gist";
+
+const _DEFAULT_STATE = {
+    name: DEFAULT_GIST_NAME,
+    open: false,
+    anchor: 'left',
+    mode: LANGUAGES[0],
+    theme: THEMES[0],
+    fontSize: 14,
+    showLineNumbers: true,
+    showGutters: true,
+    tabSize: 4,
+    content: "Happy writing..!",
+    storageLimitExceeded: false,
+    inSavingMode: false,
+    contendChanged: false,
+};
 
 class App extends React.Component {
-    state = {
-        open: false,
-        anchor: 'left',
-        mode: LANGUAGES[0],
-        theme: THEMES[0],
-        fontSize: 14,
-        showLineNumbers: true,
-        showGutters: true,
-        tabSize: 4
-    };
+
+    state = _DEFAULT_STATE;
 
     componentWillMount(){
-        this.setState(this.retrieveState());
+        this.setState(this.retrieveState(STATE_KEY));
     }
 
-    retrieveState = () => {
-        if(window.localStorage.hasOwnProperty(STATE_KEY)) {
-            return JSON.parse(window.localStorage.getItem(STATE_KEY));
+    retrieveState = (key) => {
+        if(window.localStorage.hasOwnProperty(key)) {
+            return JSON.parse(window.localStorage.getItem(key));
         }else{
-            return this.state;
+            return _DEFAULT_STATE;
         }
     };
 
-    commitState = (state) => {
-        window.localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    commitState = (key, state) => {
+        const { storageLimitExceeded, inSavingMode, contendChanged, ...actualState } = state;
+        const serializedState = JSON.stringify(actualState);
+        try {
+            if(state.name !== DEFAULT_GIST_NAME){ //storing the saved one separately
+                window.localStorage.setItem(DEFAULT_GIST_NAME, serializedState);
+            }
+            window.localStorage.setItem(key, serializedState);
+        }catch (e){
+            this.setState({storageLimitExceeded: true});
+        }
     };
 
     componentWillUpdate(nextProps, nextState) {
-        this.commitState(nextState);
+        if(!nextState.storageLimitExceeded){
+            this.commitState(STATE_KEY, nextState);
+        }
     }
 
     handleDrawerOpen = () => {
@@ -234,9 +284,17 @@ class App extends React.Component {
         });
     };
 
+    handleContentChange = (content) => {
+        this.setState({content});
+    };
+
+    handleSave = () => {
+        this.setState({inSavingMode: true});
+    };
+
     render() {
-        const { classes, theme } = this.props;
-        const { anchor, open } = this.state;
+        const { classes } = this.props;
+        const { anchor, open, storageLimitExceeded, inSavingMode, showNotes } = this.state;
 
         const drawer = () => <Sidebar
             {...this.props}
@@ -247,48 +305,86 @@ class App extends React.Component {
         />;
 
         return (
-            <div className={classes.root}>
-                <div className={classes.appFrame}>
-                    <AppBar
-                        className={classNames(classes.appBar, {
-                            [classes.appBarShift]: open,
-                            [classes[`appBarShift-${anchor}`]]: open,
-                        })}
-                        position="static"
-                    >
-                        <Toolbar disableGutters={!open}>
+            <MuiThemeProvider theme={theme}>
+                <div className={classes.root}>
+                    <Snackbar
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'center',
+                        }}
+                        open={storageLimitExceeded}
+                        autoHideDuration={6000}
+                        onClose={() => this.setState({storageLimitExceeded: false})}
+                        SnackbarContentProps={{
+                            'aria-describedby': 'message-id',
+                        }}
+                        message={<span id="message-id">Storage Limit Exceeded..!</span>}
+                        action={[
+                            <Button key="undo" color="secondary" size="small" onClick={() => this.setState({showNotes: true})}>
+                                DELETE EXISTING NOTES
+                            </Button>,
                             <IconButton
-                                color="contrast"
-                                aria-label="open drawer"
-                                onClick={this.handleDrawerOpen}
-                                className={classNames(classes.menuButton, open && classes.hide)}
+                                key="close"
+                                aria-label="Close"
+                                color="inherit"
+                                className={classes.close}
+                                onClick={() => this.setState({storageLimitExceeded: false})}
                             >
-                                <MenuIcon />
-                            </IconButton>
-                            <Typography type="title" color="inherit" noWrap className={classes.flex}>
-                                Aascar Editor
-                            </Typography>
-                            <div className={classes.appBarMenu}>
-                                <AppbarMenu {...this.props} {...this.state} handleChange={this.handleChange}/>
+                                <CloseIcon />
+                            </IconButton>,
+                        ]}
+                    />
+                    <div className={classes.appFrame}>
+                        <AppBar
+                            className={classNames(classes.appBar, {
+                                [classes.appBarShift]: open,
+                                [classes[`appBarShift-${anchor}`]]: open,
+                            })}
+                            position="static"
+                        >
+                            <Toolbar disableGutters={!open}>
+                                <IconButton
+                                    color="secondary"
+                                    aria-label="open menu"
+                                    onClick={this.handleDrawerOpen}
+                                    className={classNames(classes.menuButton, open && classes.hide)}
+                                >
+                                    <MenuIcon />
+                                </IconButton>
+                                <Typography variant="title" color="secondary" noWrap className={classes.flex}>
+                                    Aascar Editor
+                                </Typography>
+                                <div className={classes.appBarMenu}>
+                                    <AppbarMenu
+                                        {...this.props}
+                                        {...this.state}
+                                        handleChange={this.handleChange}
+                                    />
+                                </div>
+                            </Toolbar>
+                        </AppBar>
+                        {
+                            ANCHOR_ENUM.LEFT === anchor && drawer()
+                        }
+                        <main
+                            className={classNames(classes.content, classes[`content-${anchor}`], {
+                                [classes.contentShift]: open,
+                                [classes[`contentShift-${anchor}`]]: open,
+                            })}
+                        >
+                            <Editor {...this.props} {...this.state} handleChange={this.handleContentChange}/>
+                            <div className={classes.fabIcon}>
+                                <Button variant="fab" color="primary" aria-label="save" onClick={this.handleSave}>
+                                    <SaveIcon />
+                                </Button>
                             </div>
-                        </Toolbar>
-                    </AppBar>
-                    {
-                        ANCHOR_ENUM.LEFT === anchor && drawer()
-                    }
-                    <main
-                        className={classNames(classes.content, classes[`content-${anchor}`], {
-                            [classes.contentShift]: open,
-                            [classes[`contentShift-${anchor}`]]: open,
-                        })}
-                    >
-                        <Editor {...this.props} {...this.state}/>
-                    </main>
-                    {
-                        ANCHOR_ENUM.RIGHT === anchor && drawer()
-                    }
+                        </main>
+                        {
+                            ANCHOR_ENUM.RIGHT === anchor && drawer()
+                        }
+                    </div>
                 </div>
-            </div>
+            </MuiThemeProvider>
         );
     }
 }
