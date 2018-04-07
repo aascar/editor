@@ -39,7 +39,7 @@ export class Sidebar extends React.Component {
             name, classes, theme, anchor, open, mode, fontSize,
             handleDrawerClose, handleChangeAnchor,
             handleChange, showLineNumbers, showGutters,
-            tabSize, notes, handleNoteChange
+            tabSize, notes, handleNoteChange, handleShowNotes
         } = this.props;
 
         return (
@@ -66,7 +66,11 @@ export class Sidebar extends React.Component {
                             label="Select Previous Gists"
                             placeholder="First Notes"
                         />
-                        <Button style={{marginTop: 8}} size="small" color="primary">Show All Gists</Button>
+                        <Button
+                            style={{marginTop: 8}}
+                            size="small"
+                            color="primary"
+                            onClick={handleShowNotes}>Show All Gists</Button>
                         <TextField
                             select
                             label="Editor Theme"

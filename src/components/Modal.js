@@ -8,11 +8,24 @@ import Dialog, {
     DialogTitle,
     withMobileDialog,
 } from 'material-ui/Dialog';
+import { withStyles } from 'material-ui/styles';
+
+const styles = theme => ({
+    root: {
+        maxHeight: 360,
+        /*width: '100%',
+        maxWidth: 360,
+        backgroundColor: theme.palette.background.paper,*/
+    },
+    dialog: {
+
+    },
+});
 
 class ResponsiveDialog extends React.Component {
 
     render() {
-        const { fullScreen, open, handleClose, title, children, actions } = this.props;
+        const { classes, fullScreen, open, handleClose, title, children, actions } = this.props;
 
         return (
             <Dialog
@@ -20,9 +33,10 @@ class ResponsiveDialog extends React.Component {
                 open={open}
                 onClose={handleClose}
                 aria-labelledby="responsive-dialog-title"
+                className={classes.dialog}
             >
                 { title && <DialogTitle id="responsive-dialog-title">{title}</DialogTitle> }
-                <DialogContent>
+                <DialogContent className={classes.root}>
                     { children }
                 </DialogContent>
                 {
@@ -39,4 +53,4 @@ ResponsiveDialog.propTypes = {
     fullScreen: PropTypes.bool.isRequired,
 };
 
-export default withMobileDialog()(ResponsiveDialog);
+export default withStyles(styles)(withMobileDialog()(ResponsiveDialog));

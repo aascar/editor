@@ -25,6 +25,8 @@ import List, {
     ListItemText,
 } from 'material-ui/List';
 import DeleteIcon from 'material-ui-icons/Delete';
+import {Helmet} from "react-helmet";
+import Notes from "./components/Notes";
 
 const drawerWidth = 240;
 
@@ -48,7 +50,7 @@ const styles = theme => ({
             margin: 0,
             width: '100%',
             height: '100%'
-        },
+        }
     },
     root: {
         width: '100%',
@@ -261,6 +263,7 @@ class App extends React.Component {
 
     commitState = (key, state) => {
         const {
+            open, deleted,
             storageLimitExceeded, inSavingMode, contendChanged,
             showNotes, ...actualState
         } = state;
@@ -298,7 +301,7 @@ class App extends React.Component {
     handleChange = property => event => {
         const { value } = event.target;
         this.setState({
-            [property]: isNaN(value) ? value : Number(value),
+            [property]: isNaN(value) ? value : Number(value)
         });
     };
 
@@ -314,9 +317,19 @@ class App extends React.Component {
     };
 
     handleNoteChange = (key) => {
-        const state = JSON.parse(window.localStorage.getItem(key));
+        let state = _DEFAULT_STATE;
+        let stateKey = STATE_KEY;
+        if(key && key.length !== 0){
+            stateKey = key;
+            state = JSON.parse(window.localStorage.getItem(stateKey));
+        }
         this.setState(state);
-        this.commitState(key, state);
+        this.commitState(stateKey, state);
+    };
+
+    handleDelete = (key) => {
+        this.setState({deleted: true});
+        window.localStorage.removeItem(key);
     };
 
     render() {
@@ -356,11 +369,17 @@ class App extends React.Component {
             handleChangeAnchor={this.handleChangeAnchor}
             handleChange={this.handleChange}
             handleNoteChange={this.handleNoteChange}
+            handleShowNotes={() => this.setState({showNotes: true})}
             notes={notes}
         />;
 
+        const needToSave = (currentNotes && currentNotes.content !== content) || !currentNotes;
+
         return (
             <MuiThemeProvider theme={theme}>
+                <Helmet>
+                    <title>{ `${needToSave ? '*' : ''}${name}` } | Aascar Editor</title>
+                </Helmet>
                 <div className={classes.root}>
                     <Snackbar
                         anchorOrigin={{
@@ -429,7 +448,7 @@ class App extends React.Component {
                         >
                             <Editor {...this.props} {...this.state} handleChange={this.handleContentChange}/>
                             {
-                                currentNotes && currentNotes.content !== content && <div className={classes.fabIcon}>
+                                needToSave && <div className={classes.fabIcon}>
                                     <Button variant="fab" color="primary" aria-label="save" onClick={() => {
                                         this.setState({inSavingMode: true});
                                     }}>
@@ -441,7 +460,7 @@ class App extends React.Component {
                                 open={inSavingMode}
                                 handleClose={() => this.setState({inSavingMode: false})}
                                 actions={
-                                    <Button disabled={name && name.length < 0} onClick={this.handleSave} color="primary">
+                                    <Button disabled={name && name.length < 1} onClick={this.handleSave} color="primary">
                                         Save
                                     </Button>
                                 }
@@ -450,35 +469,25 @@ class App extends React.Component {
                                     id="content-name"
                                     label="Gist Name"
                                     value={name}
-                                    onChange={this.handleChange("name")}
+                                    onChange={(e) => this.setState({name: e.target.value})}
                                     type="text"
                                 />
                             </Modal>
                             <Modal
                                 open={showNotes}
                                 handleClose={() => this.setState({showNotes: false})}
+                                actions={
+                                    <Button onClick={() => this.setState({showNotes: false})} color="primary">
+                                        Close
+                                    </Button>
+                                }
                             >
-                                <List dense>
-                                    {
-                                        notes.map(item => {
-                                            return (
-                                                <ListItem key={item.key}>
-                                                    <ListItemText
-                                                        primary={item.label}
-                                                        secondary={item.content.substring(0, 80)}
-                                                    />
-                                                    <ListItemSecondaryAction>
-                                                        <IconButton aria-label="Delete" onClick={() => {
-                                                            window.localStorage.removeItem(item.key);
-                                                        }}>
-                                                            <DeleteIcon/>
-                                                        </IconButton>
-                                                    </ListItemSecondaryAction>
-                                                </ListItem>
-                                            );
-                                        })
-                                    }
-                                </List>
+                                <Notes
+                                    notes={notes}
+                                    handleDelete={this.handleDelete}
+                                    handleNoteChange={this.handleNoteChange}
+                                    handleClose={() => this.setState({showNotes: false})}
+                                />
                             </Modal>
                         </main>
                         {
