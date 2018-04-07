@@ -12,7 +12,7 @@ import Dialog, {
 class ResponsiveDialog extends React.Component {
 
     render() {
-        const { fullScreen, open, handleClose, title, text } = this.props;
+        const { fullScreen, open, handleClose, title, children, actions } = this.props;
 
         return (
             <Dialog
@@ -23,10 +23,13 @@ class ResponsiveDialog extends React.Component {
             >
                 { title && <DialogTitle id="responsive-dialog-title">{title}</DialogTitle> }
                 <DialogContent>
-                    <DialogContentText>
-                        { text }
-                    </DialogContentText>
+                    { children }
                 </DialogContent>
+                {
+                    actions && <DialogActions>
+                        {actions}
+                    </DialogActions>
+                }
             </Dialog>
         );
     }

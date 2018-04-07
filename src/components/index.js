@@ -22,6 +22,8 @@ import AceEditor from 'react-ace';
 import { LANGUAGES, THEMES } from "../constants";
 import Github from "../Github";
 import Select from "./Select";
+import {makeKey} from "../utils";
+import {Button} from "material-ui";
 
 LANGUAGES.forEach(mode => {
     require(`brace/mode/${mode}`);
@@ -34,10 +36,10 @@ export class Sidebar extends React.Component {
 
     render() {
         const {
-            classes, theme, anchor, open, mode, fontSize,
+            name, classes, theme, anchor, open, mode, fontSize,
             handleDrawerClose, handleChangeAnchor,
             handleChange, showLineNumbers, showGutters,
-            tabSize
+            tabSize, notes, handleNoteChange
         } = this.props;
 
         return (
@@ -57,6 +59,14 @@ export class Sidebar extends React.Component {
                     </div>
                     <Divider />
                     <div className={classes.drawerControls}>
+                        <Select
+                            options={notes}
+                            handleChange={handleNoteChange}
+                            value={makeKey(name)}
+                            label="Select Previous Gists"
+                            placeholder="First Notes"
+                        />
+                        <Button style={{marginTop: 8}} size="small" color="primary">Show All Gists</Button>
                         <TextField
                             select
                             label="Editor Theme"
@@ -147,9 +157,9 @@ export class AppbarMenu extends React.Component {
 
     render() {
         const {
-            classes, theme, anchor, open, mode, fontSize,
+            name, classes, theme, anchor, open, mode, fontSize,
             handleDrawerClose, handleChangeAnchor,
-            handleChange, notes, handleNoteChange, currentNote
+            handleChange, notes, handleNoteChange
         } = this.props;
 
         return (
@@ -193,6 +203,8 @@ export class AppbarMenu extends React.Component {
                     title="GitHub"
                     color="secondary"
                     href="https://github.com/aascar/editor"
+                    style={{verticalAlign: 'bottom'}}
+                    target="_blank"
                 >
                     <Github />
                 </IconButton>

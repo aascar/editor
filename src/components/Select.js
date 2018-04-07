@@ -121,7 +121,7 @@ const ITEM_HEIGHT = 48;
 const styles = theme => ({
     root: {
         flexGrow: 1,
-        height: 250,
+        //height: 250,
     },
     chip: {
         margin: theme.spacing.unit / 4,
@@ -151,6 +151,7 @@ const styles = theme => ({
         },
         '.Select.has-value.is-clearable.Select--single > .Select-control .Select-value': {
             padding: 0,
+            color: 'inherit'
         },
         '.Select-noresults': {
             padding: theme.spacing.unit * 2,

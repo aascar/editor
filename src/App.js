@@ -8,12 +8,23 @@ import Typography from 'material-ui/Typography';
 import IconButton from 'material-ui/IconButton';
 import MenuIcon from 'material-ui-icons/Menu';
 import {AppbarMenu, Editor, Sidebar} from "./components";
+import Modal from "./components/Modal";
 import {ANCHOR_ENUM, LANGUAGES, THEMES} from "./constants";
 import { blue } from 'material-ui/colors';
 import Snackbar from 'material-ui/Snackbar';
 import Button from 'material-ui/Button';
 import CloseIcon from 'material-ui-icons/Close';
 import SaveIcon from 'material-ui-icons/Save';
+import {TextField} from "material-ui";
+import {makeKey} from "./utils";
+import List, {
+    ListItem,
+    ListItemAvatar,
+    ListItemIcon,
+    ListItemSecondaryAction,
+    ListItemText,
+} from 'material-ui/List';
+import DeleteIcon from 'material-ui-icons/Delete';
 
 const drawerWidth = 240;
 
@@ -92,7 +103,7 @@ const styles = theme => ({
         padding: 0,
     },
     drawerControls: {
-        padding: '0 8px',
+        padding: '3px 8px 0',
         minHeight: 'calc(100vh - 150px)'
     },
     drawerBottomControls: {
@@ -226,6 +237,7 @@ const _DEFAULT_STATE = {
     storageLimitExceeded: false,
     inSavingMode: false,
     contendChanged: false,
+    showNotes: false
 };
 
 class App extends React.Component {
@@ -240,16 +252,22 @@ class App extends React.Component {
         if(window.localStorage.hasOwnProperty(key)) {
             return JSON.parse(window.localStorage.getItem(key));
         }else{
+            if(window.localStorage.hasOwnProperty(STATE_KEY)){
+                return JSON.parse(window.localStorage.getItem(STATE_KEY));
+            }
             return _DEFAULT_STATE;
         }
     };
 
     commitState = (key, state) => {
-        const { storageLimitExceeded, inSavingMode, contendChanged, ...actualState } = state;
+        const {
+            storageLimitExceeded, inSavingMode, contendChanged,
+            showNotes, ...actualState
+        } = state;
         const serializedState = JSON.stringify(actualState);
         try {
-            if(state.name !== DEFAULT_GIST_NAME){ //storing the saved one separately
-                window.localStorage.setItem(DEFAULT_GIST_NAME, serializedState);
+            if(key !== DEFAULT_GIST_NAME){ //saving last updated
+                window.localStorage.setItem(STATE_KEY, serializedState);
             }
             window.localStorage.setItem(key, serializedState);
         }catch (e){
@@ -289,12 +307,47 @@ class App extends React.Component {
     };
 
     handleSave = () => {
-        this.setState({inSavingMode: true});
+        const { name } = this.state;
+        const key = makeKey(name);
+        this.commitState(key, this.state);
+        this.setState({inSavingMode: false});
+    };
+
+    handleNoteChange = (key) => {
+        const state = JSON.parse(window.localStorage.getItem(key));
+        this.setState(state);
+        this.commitState(key, state);
     };
 
     render() {
         const { classes } = this.props;
-        const { anchor, open, storageLimitExceeded, inSavingMode, showNotes } = this.state;
+        const {
+            anchor, open,
+            storageLimitExceeded, inSavingMode, showNotes,
+            name, content
+        } = this.state;
+
+        const notes = Object.keys(window.localStorage).filter(key => {
+            const value = window.localStorage.getItem(key);
+            if(key !== STATE_KEY && isNaN(value)){
+                try { //FIXME: need proper way to check whether it's valid JSON
+                    const item = JSON.parse(value);
+                    if (typeof item === 'object' && item.hasOwnProperty("name")) {
+                        return true;
+                    }
+                } catch(e) {
+                    //Not valid JSON
+                }
+                return false;
+            }else{
+                return false;
+            }
+        }).map(key => {
+            const item = JSON.parse(window.localStorage.getItem(key));
+            return {key: key, label: item.name, value: key, content: item.content, language: item.language};
+        });
+
+        const currentNotes = notes.find(note => note.label === name);
 
         const drawer = () => <Sidebar
             {...this.props}
@@ -302,6 +355,8 @@ class App extends React.Component {
             handleDrawerClose={this.handleDrawerClose}
             handleChangeAnchor={this.handleChangeAnchor}
             handleChange={this.handleChange}
+            handleNoteChange={this.handleNoteChange}
+            notes={notes}
         />;
 
         return (
@@ -373,11 +428,58 @@ class App extends React.Component {
                             })}
                         >
                             <Editor {...this.props} {...this.state} handleChange={this.handleContentChange}/>
-                            <div className={classes.fabIcon}>
-                                <Button variant="fab" color="primary" aria-label="save" onClick={this.handleSave}>
-                                    <SaveIcon />
-                                </Button>
-                            </div>
+                            {
+                                currentNotes && currentNotes.content !== content && <div className={classes.fabIcon}>
+                                    <Button variant="fab" color="primary" aria-label="save" onClick={() => {
+                                        this.setState({inSavingMode: true});
+                                    }}>
+                                        <SaveIcon/>
+                                    </Button>
+                                </div>
+                            }
+                            <Modal
+                                open={inSavingMode}
+                                handleClose={() => this.setState({inSavingMode: false})}
+                                actions={
+                                    <Button disabled={name && name.length < 0} onClick={this.handleSave} color="primary">
+                                        Save
+                                    </Button>
+                                }
+                            >
+                                <TextField
+                                    id="content-name"
+                                    label="Gist Name"
+                                    value={name}
+                                    onChange={this.handleChange("name")}
+                                    type="text"
+                                />
+                            </Modal>
+                            <Modal
+                                open={showNotes}
+                                handleClose={() => this.setState({showNotes: false})}
+                            >
+                                <List dense>
+                                    {
+                                        notes.map(item => {
+                                            return (
+                                                <ListItem key={item.key}>
+                                                    <ListItemText
+                                                        primary={item.label}
+                                                        secondary={item.content.substring(0, 80)}
+                                                    />
+                                                    <ListItemSecondaryAction>
+                                                        <IconButton aria-label="Delete" onClick={() => {
+                                                            window.localStorage.removeItem(item.key);
+                                                        }}>
+                                                            <DeleteIcon/>
+                                                        </IconButton>
+                                                    </ListItemSecondaryAction>
+                                                </ListItem>
+                                            );
+                                        })
+                                    }
+                                </List>
+                            </Modal>
                         </main>
                         {
                             ANCHOR_ENUM.RIGHT === anchor && drawer()
